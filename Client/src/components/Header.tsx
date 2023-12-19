@@ -44,7 +44,7 @@ function Header({}: Props) {
  className="relative flex flex-row md:flex-row text-center md:text-left
        px-10 justify-between mx-28 items-center overflow-hidden xl:flex-row top-5  py-1">
     <div>
-    <a href="#" className='text-xl text-gray-500'>Home</a>
+    <a href="/" className='text-xl text-gray-500'>Home</a>
     </div>
     <div>
     <Link to="/Play" className="text-xl text-gray-500">Play</Link>
