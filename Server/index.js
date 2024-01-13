@@ -6,7 +6,7 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const MySQLStore = require('express-mysql-session')(session);
-
+const axios = require('axios');
 const app = express();
 
 app.use(bodyParser.json());
@@ -105,40 +105,58 @@ async function authenticateUser(email, password, done) {
 }
 
 
-app.post('/login', (req, res, next) => {
+app.post('/login', async (req, res, next) => {
+  const { email, password, captchaToken } = req.body;
 
-  if (req.isAuthenticated()) {
-    return res.status(200).json({ success: true, message: 'Already authenticated' });
-  }
+  // Validate reCAPTCHA token
+  const secretKey = '6LdB9kQpAAAAAJ9EtsaN0xGrFiN1r0juZGYUW50x'; // Replace with your actual secret key
+  const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`;
 
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      return next(err);
+  try {
+    const captchaResponse = await axios.post(verifyUrl);
+    const { success: captchaSuccess } = captchaResponse.data;
+
+    if (!captchaSuccess) {
+      return res.status(401).json({ success: false, message: 'Captcha validation failed' });
     }
-    if (!user) {
-      return res.status(401).json({ success: false, message: info.message });
+
+    if (req.isAuthenticated()) {
+      return res.status(200).json({ success: true, message: 'Already authenticated' });
     }
 
-    req.logIn(user, (loginErr) => {
-      if (loginErr) {
-        return next(loginErr);
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ success: false, message: info.message });
       }
 
-      req.session.passport = { user: { ID: user.ID, email: user.email } };
-
-      req.session.save((saveErr) => {
-        if (saveErr) {
-          return next(saveErr);
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
         }
 
-        console.log('After login - isAuthenticated:', req.isAuthenticated());
-        console.log('Session after login:', req.session);
+        req.session.passport = { user: { ID: user.ID, email: user.email } };
 
-        res.status(200).json({ success: true, message: 'Login successful' });
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            return next(saveErr);
+          }
+
+          console.log('After login - isAuthenticated:', req.isAuthenticated());
+          console.log('Session after login:', req.session);
+
+          res.status(200).json({ success: true, message: 'Login successful' });
+        });
       });
-    });
-  })(req, res, next);
+    })(req, res, next);
+  } catch (error) {
+    console.error('Error verifying reCAPTCHA:', error);
+    res.status(500).json({ success: false, message: 'Error verifying reCAPTCHA' });
+  }
 });
+
 
 
 app.post('/register', async (req, res) =>{
@@ -384,6 +402,22 @@ app.post('/request-question', async (req, res) => {
   } catch (error) {
     console.error('Error sending question request:', error);
     res.status(500).json({ success: false, message: 'Failed to send the question request' });
+  }
+});
+
+app.put('/increment-review-count', async (req, res) => {
+  const { card, increment } = req.body;
+
+  try {
+    const incrementValue = increment ? 1 : -1; // Increment or decrement based on 'increment' flag
+
+    const updateQuery = 'UPDATE card_requests SET review_count = review_count + ? WHERE card_text = ?';
+    await db.execute(updateQuery, [incrementValue, card]);
+
+    res.status(200).json({ success: true, message: 'Review count updated successfully' });
+  } catch (error) {
+    console.error('Error updating review count:', error);
+    res.status(500).json({ success: false, message: 'Failed to update review count' });
   }
 });
 

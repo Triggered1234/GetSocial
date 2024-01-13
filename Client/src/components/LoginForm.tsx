@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState(''); // State to hold reCAPTCHA token
+
 
   const handleLogin = async () => {
     try {
@@ -14,6 +17,7 @@ const LoginForm = () => {
         {
           email,
           password,
+          captchaToken,
         },
         {
           withCredentials: true,
@@ -47,6 +51,12 @@ const LoginForm = () => {
     }
   };
 
+  const handleRecaptchaChange = (token: string | null) => {
+    if (token) {
+      setCaptchaToken(token);
+    }
+  };
+
   return (
     <div className="items-center">
       <form className="text-center">
@@ -72,8 +82,16 @@ const LoginForm = () => {
             className="bg-[#E5E5CB] text-center rounded-full"
           />
         </div>
+
+        <div className="relative top-2">
+          <ReCAPTCHA
+            sitekey="6LdB9kQpAAAAAJLjP10Fw0rEa-3UxuvvDSzzBHJ1"
+            onChange={handleRecaptchaChange}
+          />
+        </div>
+
         <div>
-          <button className="text-center py-2 text-l" type="button" onClick={handleLogin}>
+          <button className="text-center py-2 text-l relative top-12" type="button" onClick={handleLogin}>
             Login
           </button>
         </div>

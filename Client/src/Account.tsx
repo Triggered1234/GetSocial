@@ -35,6 +35,7 @@ const Account: React.FC<Props> = ({}) => {
   const [showDropdown, setShowDropdown] = useState<boolean>(false); 
   const [selectedApproveId, setSelectedApproveId] = useState<number | null>(null);
   const [showReviewQuestions, setShowReviewQuestions] = useState<boolean>(false);
+  const [showQuestionRequests, setShowQuestionRequests] = useState<boolean>(false);
   const [showPreCheckQuestions, setShowPreCheckQuestions] = useState<boolean>(false);
   const [newQuestion, setNewQuestion] = useState<string>('');
   const [newRequestQuestion, setNewRequestQuestion] = useState<string>('');
@@ -443,13 +444,19 @@ const Account: React.FC<Props> = ({}) => {
                 <button className="p-1 rounded-full bg-slate-300" onClick={handleRequestQuestion}>Add Question</button>
               </div>
             )}
-            <ul>
-        {reviews.map((review) => (
-          <li key={review.id}>
-            Review: {review.card_text} - Status: {getStatusLabel(review.status)}
-          </li>
-        ))}
-      </ul>
+
+<button className="text-xl p-1 rounded-full bg-slate-400" onClick={() => setShowQuestionRequests(!showQuestionRequests)}>
+              {showQuestionRequests ? 'Hide your question requests status' : 'Show your question requests status'}
+            </button>
+            {showQuestionRequests && (
+              <ul className="h-[250px] w-[100%] overflow-y-auto bg-slate-300 rounded-md">
+              {reviews.map((review) => (
+                <li key={review.id}>
+                  Review: {review.card_text} - Status: {getStatusLabel(review.status)}
+                </li>
+              ))}
+            </ul>
+            )}
           </div>
         )}
       </div>
