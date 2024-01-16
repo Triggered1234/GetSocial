@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
@@ -8,7 +9,7 @@ const bodyParser = require('body-parser');
 const MySQLStore = require('express-mysql-session')(session);
 const axios = require('axios');
 const app = express();
-
+const nodemailer = require('nodemailer');
 app.use(bodyParser.json());
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 
@@ -159,18 +160,58 @@ app.post('/login', async (req, res, next) => {
 
 
 
-app.post('/register', async (req, res) =>{
+app.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
-  const query = 'INSERT INTO users (username, email, password) VALUES ( ?, ?, ?)';
+
+  // Generate a verification code (you can use a library like crypto-random-string)
+  const verificationCode = generateVerificationCode();
+
+  // Store the verification code in your database along with other user details
+  const insertUserQuery = 'INSERT INTO users (username, email, password, verification_code) VALUES (?, ?, ?, ?)';
 
   try {
-    await db.execute(query, [username, email, password]);
-    res.status(200).json({ success: true, message: 'Registration successful' });
+    await db.execute(insertUserQuery, [username, email, password, verificationCode]);
+
+    // Send a verification email
+    await sendVerificationEmail(email, verificationCode);
+
+    res.status(200).json({ success: true, message: 'Registration successful. Verification email sent.' });
   } catch (error) {
     console.error('Error registering user:', error);
     res.status(500).json({ success: false, message: 'Registration failed' });
   }
 });
+
+// Helper function to generate a random verification code
+function generateVerificationCode() {
+  // Generate a random buffer
+  const buffer = crypto.randomBytes(5);
+  
+  // Convert the buffer to a hexadecimal string
+  const verificationCode = buffer.toString('hex');
+  
+  return verificationCode;
+}
+
+// Helper function to send a verification email
+async function sendVerificationEmail(email, verificationCode) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'triggered234adi@gmail.com',
+      pass: 'ymbw ruzd nkbt gcox', 
+    },
+  });
+
+  const mailOptions = {
+    from: 'triggered234adi@gmail.com',
+    to: email,
+    subject: 'Verify Your Email',
+    text: `Please click on the following link to verify your email: http://localhost:3002/verify-email?code=${verificationCode}`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
 
 
 app.post('/logout', (req, res) => {
@@ -290,6 +331,162 @@ app.post('/pre-approve-question', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to approve the question' });
   }
 });
+
+// ... (your existing code)
+
+// ... (your existing code)
+
+app.get('/verify-email', async (req, res) => {
+  const verificationCode = req.query.code;
+
+  if (!verificationCode) {
+    return res.status(400).json({ success: false, message: 'Invalid verification code' });
+  }
+
+  try {
+    const updateQuery = 'UPDATE users SET isVerified = true WHERE verification_code = ?';
+    const [result] = await db.execute(updateQuery, [verificationCode]);
+
+    if (result.affectedRows > 0) {
+      return res.redirect('http://localhost:3000/');
+    } else {
+      return res.status(404).json({ success: false, message: 'Verification code not found' });
+    }
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    return res.status(500).json({ success: false, message: 'Failed to verify email' });
+  }
+});
+
+// Add these lines to your existing code
+
+app.post('/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  try {
+    // Generate a unique token (you can use a library like crypto-random-string)
+    const resetToken = generateResetToken();
+
+    // Store the reset token, user email, and new password in your database
+    const expirationTime = new Date();
+expirationTime.setMinutes(expirationTime.getMinutes() + 5);
+
+const insertTokenQuery = 'INSERT INTO password_reset_tokens (email, reset_token, new_password, reset_token_expiry) VALUES (?, ?, ?, ?)';
+await db.execute(insertTokenQuery, [email, resetToken, newPassword, expirationTime]);
+
+    // Send a password reset email
+    await sendPasswordResetEmail(email, resetToken);
+
+    res.status(200).json({ success: true, message: 'Password reset link sent to your email address.' });
+  } catch (error) {
+    console.error('Error initiating password reset:', error);
+    res.status(500).json({ success: false, message: 'Failed to initiate password reset' });
+  }
+});
+
+// Helper function to send a password reset email
+async function sendPasswordResetEmail(email, resetToken) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'triggered234adi@gmail.com',
+      pass: 'ymbw ruzd nkbt gcox', 
+    },
+  });
+
+  const mailOptions = {
+    from: 'triggered234adi@gmail.com',
+    to: email,
+    subject: 'Password Reset',
+    text: `To reset your password, click on the following link: http://localhost:3002/complete-reset-password?token=${resetToken}`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+// Helper function to find a user by reset token
+async function findUserByResetToken(token) {
+  const query = 'SELECT * FROM password_reset_tokens WHERE reset_token = ?';
+  const [results] = await db.execute(query, [token]);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  const user = {
+    id: results[0].user_id,
+    reset_token_expiry: results[0].reset_token_expiry,
+  };
+
+  return user;
+}
+
+async function findUserByResetToken(token) {
+  const query = 'SELECT email, new_password, reset_token_expiry FROM password_reset_tokens WHERE reset_token = ?';
+  const [results] = await db.execute(query, [token]);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  const user = {
+    email: results[0].email,
+    newPassword: results[0].new_password,
+    reset_token_expiry: results[0].reset_token_expiry,
+  };
+
+  return user;
+}
+
+
+
+app.get('/complete-reset-password', async (req, res) => {
+  const resetToken = req.query.token; // Extract resetToken from URL parameter
+
+  try {
+    const user = await findUserByResetToken(resetToken);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+
+    // Check if the reset token is still valid
+    if (new Date(user.reset_token_expiry) < new Date()) {
+      return res.status(401).json({ success: false, message: 'Reset token has expired' });
+    }
+
+    // Update the user's password and clear the reset token
+    const updateQuery = 'UPDATE users SET password = ? WHERE email = ?';
+
+    // Ensure that newPassword is defined before passing it to db.execute
+    if (user.newPassword) {
+      await db.execute(updateQuery, [user.newPassword, user.email]);
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid request parameters' });
+    }
+
+    // Optionally, you can clear the reset token from the token table here if needed
+    // const clearTokenQuery = 'DELETE FROM password_reset_tokens WHERE reset_token = ?';
+    // await db.execute(clearTokenQuery, [resetToken]);
+
+    return res.redirect('http://localhost:3000/');
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset password' });
+  }
+});
+
+
+
+function generateResetToken() {
+  // Generate a random buffer
+  const buffer = crypto.randomBytes(32);
+  
+  // Convert the buffer to a hexadecimal string
+  const resetToken = buffer.toString('hex');
+  
+  return resetToken;
+}
 
 app.post('/approve-question', async (req, res) => {
   const { questionId, cardPack } = req.body;

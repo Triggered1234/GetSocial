@@ -8,12 +8,14 @@ import Description from './components/Description';
 import CardPacks from './components/CardPacks';
 import IndexMenu from './components/IndexMenu';
 import Login from './Login';
+import bgHome from './components/homeBackground.jpg';
 import {BrowserRouter, Routes, Route} from "react-router-dom";
 function App() {
   return (
     
     <div className="overflow-hidden">
-    <div className='bg-[#F1EFEF] h-screen w-screen overflow-x-hidden'>
+    <div style={{ backgroundImage: `url(${bgHome})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+      className='h-screen w-screen overflow-x-hidden'>
     <Header/>
     <Welcome/>
     </div>

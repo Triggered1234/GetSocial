@@ -6,6 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import { Link } from 'react-router-dom';
 import LoginForm from './components/LoginForm';
 import axios from 'axios';
+import bgLogin from './components/bgLogin.jpg';
 import { useState } from 'react';
 
 
@@ -15,18 +16,16 @@ type Props = {}
 function Logare({}: Props) {
   
   return (
-    <div className="h-screen bg-[#D5CEA3]">
-        <div className="relative flex flex-col justify-between top-48 items-center">
+    <div className="h-screen">
+      <img src={bgLogin} className="w-[100%] h-[100%] object-cover" alt="Background"></img>
+        <div className="absolute inset-0 flex flex-col justify-center items-center">
             <div>
                 <Link to="/Meniu" className="text-4xl  text-gray-500" style={{ fontWeight: 'bold' }}>Get Social</Link>
             </div>
-            <div className="py-12 relative flex flex-col justify-evenly items-center">
+            <div className="relative flex flex-col justify-evenly items-center top-24">
                 <h1 className="text-l">Log into your account</h1>
                 <LoginForm/>
             </div>
-            <Link to="/Inregistrare">
-                    <button className="text-center py-2 px-2 bg-[#E5E5CB] rounded-full">Create an account</button>
-            </Link>
         </div>
 
     </div>

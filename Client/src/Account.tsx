@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
+import bgLogin from './components/bgLogin.jpg';
 
 interface Question {
   id: number;
@@ -314,7 +315,7 @@ const Account: React.FC<Props> = ({}) => {
   
 
   return (
-    <div className="bg-[#F1EFEF] h-screen">
+    <div style={{ backgroundImage: `url(${bgLogin})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }} className="bg-[#F1EFEF] h-screen">
       <Header />
       <div className="flex flex-col space-y-2 justify-between items-center relative top-12 text-center">
       {isAdmin && (
@@ -405,7 +406,7 @@ const Account: React.FC<Props> = ({}) => {
             {showAddNewQuestion && (
               <div className="space-y-2 items-center justify-center flex flex-col">
                 <input
-                  className="text-center rounded-full px-12"
+                  className="text-center rounded-full px-32 py-2"
                   type="text"
                   placeholder="Add New Question"
                   value={newQuestion}

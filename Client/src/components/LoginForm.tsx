@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
+import { Link } from 'react-router-dom';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -57,6 +58,33 @@ const LoginForm = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    try {
+      // Send a request to the server to initiate the password reset process
+      const response = await axios.post(
+        'http://localhost:3002/forgot-password',
+        { email },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log('Forgot Password response:', response.data);
+
+      if (response.status === 200 && response.data.success) {
+        alert('Password reset link sent to your email address.');
+      } else {
+        console.error('Forgot Password failed:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+
   return (
     <div className="items-center">
       <form className="text-center">
@@ -68,7 +96,7 @@ const LoginForm = () => {
             placeholder="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="bg-[#E5E5CB] text-center rounded-full"
+            className="text-center rounded-full"
           />
         </div>
         <div>
@@ -79,7 +107,7 @@ const LoginForm = () => {
             placeholder="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="bg-[#E5E5CB] text-center rounded-full"
+            className="text-center rounded-full"
           />
         </div>
 
@@ -90,9 +118,18 @@ const LoginForm = () => {
           />
         </div>
 
-        <div>
-          <button className="text-center py-2 text-l relative top-12" type="button" onClick={handleLogin}>
+        <div className="flex flex-col space-y-2">
+          <button className="text-center py-2 px-8 bg-white rounded-md text-l relative top-12" type="button" onClick={handleLogin}>
             Login
+          </button>
+
+          <button
+            className="text-center py-2 px-4 bg-white rounded-md text-l relative top-12"
+            type="button"
+            >
+              <Link to="/ResetPassword">
+            Forgot Password
+            </Link>
           </button>
         </div>
       </form>

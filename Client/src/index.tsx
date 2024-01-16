@@ -8,6 +8,7 @@ import Account from './Account';
 import {BrowserRouter, Routes, Route} from "react-router-dom";
 import Play from './Play';
 import GameSession from './GameSession';
+import ResetPassword from './ResetPassword'
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -20,6 +21,7 @@ root.render(
         <Route path="/" element={<App/>}> </Route>
         <Route path="/Account" element={<Account/>}></Route>
         <Route path="/Play" element={<Play/>}></Route>
+        <Route path="/ResetPassword" element={<ResetPassword/>}></Route>
         <Route path="/game-session/:selectedPack" element={<GameSession />} />
         </Routes>
     </BrowserRouter>
